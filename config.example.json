@@ -1,0 +1,11 @@
+{
+  "directorio_principal": "C:\\Ruta\\Del\\Directorio\\sedes",
+  "archivo_credenciales": "service_account.json",
+  "google_sheet_id": "REEMPLAZAR_POR_EL_ID_DEL_GOOGLE_SHEET",
+  "nombre_hoja": "Hoja 1",
+  "fila_encabezados": 11,
+  "fila_inicial_datos": 12,
+  "archivo_salida": "resultado_comparacion_carpetas.csv",
+  "umbral_coincidencia_probable": 90,
+  "umbral_revision_manual": 75
+}

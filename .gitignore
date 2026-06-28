@@ -1,0 +1,11 @@
+service_account.json
+config.json
+
+# Python virtual environments
+.venv/
+venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
