@@ -13,4 +13,5 @@ pycparser==3.0
 RapidFuzz==3.14.5
 requests==2.34.2
 requests-oauthlib==2.0.0
+Send2Trash==1.8.3
 urllib3==2.7.0

@@ -17,7 +17,7 @@ El script realiza estas tareas:
 5. Lee registros de una Google Sheet.
 6. Usa la columna `NOMBRE` para comparar contra el nombre de cada carpeta.
 7. Lee la columna `FECHA`.
-8. Lee la columna `MINUTOS INF` e indica si tiene valor.
+8. Lee la columna `MINUTOS INF` e indica si contiene un entero mayor que cero.
 9. Calcula un porcentaje de similitud entre los nombres.
 10. Genera un CSV final dentro del directorio principal.
 
@@ -61,6 +61,8 @@ Los nombres de las carpetas pueden incluir:
 comparador_carpetas_google_sheet/
 ├── .venv/
 ├── revisar_carpetas.py
+├── borrar_carpetas_con_minutos.py
+├── minutos.py
 ├── probar_google_sheet.py
 ├── config.example.json
 ├── config.json
@@ -127,7 +129,7 @@ Actualiza `pip` e instala las dependencias:
 
 ```bash
 python -m pip install --upgrade pip
-pip install gspread google-auth rapidfuzz
+pip install gspread google-auth rapidfuzz Send2Trash
 ```
 
 Guarda las dependencias del proyecto:
@@ -377,7 +379,7 @@ El script asume la siguiente configuración:
 - Los registros comienzan en la **fila 12**.
 - La columna `FECHA` contiene el día y mes, por ejemplo `1/6`.
 - La columna `NOMBRE` contiene el nombre de la persona.
-- La columna `MINUTOS INF` indica minutos de informe cuando tiene un valor.
+- La columna `MINUTOS INF` indica minutos de informe cuando contiene un entero mayor que cero.
 
 Ejemplo:
 
@@ -488,7 +490,7 @@ Estados esperados:
 | `Coincidencia probable` | Similitud alta, por defecto igual o superior a 90%. |
 | `Posible coincidencia - revisar` | Similitud entre 75% y 89.99%; requiere verificación humana. |
 | `No encontrado` | Similitud inferior a 75%. |
-| `Sin carpeta coincidente` | Registro de Google Sheets sin `MINUTOS INF` que se incluye aunque no exista una carpeta asociada. |
+| `Sin carpeta coincidente` | Registro de Google Sheets sin minutos válidos que se incluye aunque no exista una carpeta asociada. |
 
 Los umbrales se pueden ajustar en `config.json`:
 
@@ -549,6 +551,55 @@ resultado_comparacion_carpetas.csv
 
 ---
 
+# 7.1 Retirar carpetas que ya tienen minutos
+
+El script `borrar_carpetas_con_minutos.py` busca filas cuya columna `MINUTOS INF` contiene un entero mayor que cero y las compara con las carpetas locales.
+
+Una celda cuenta como minutos válidos si contiene solamente dígitos y su valor es mayor que cero. Por ejemplo:
+
+| Valor | ¿Tiene minutos? |
+|---|---|
+| `50` | Sí |
+| `001` | Sí |
+| `0` | No |
+| `12.5` | No |
+| `pendiente` | No |
+| `-5` | No |
+
+Ejecuta:
+
+```bash
+python borrar_carpetas_con_minutos.py
+```
+
+En Windows también puedes usar:
+
+```powershell
+python .\borrar_carpetas_con_minutos.py
+```
+
+Antes de realizar cambios, el script muestra:
+
+- Número de fila de Google Sheets.
+- Nombre y minutos registrados.
+- Tipo y porcentaje de coincidencia.
+- Ruta completa de la carpeta local.
+- Coincidencias ambiguas y filas que no tienen carpeta.
+
+Solo se ofrecen coincidencias exactas o probables según `umbral_coincidencia_probable`. Si una fila coincide con varias carpetas, o una carpeta coincide con varias filas, el caso se omite para revisión manual.
+
+Para continuar debes escribir exactamente:
+
+```text
+BORRAR
+```
+
+Las carpetas confirmadas, junto con todo su contenido, se mueven a la Papelera del sistema mediante `Send2Trash`; no se borran filas de Google Sheets. Mientras no vacíes la Papelera, podrás recuperar una carpeta movida por error.
+
+La cuenta de servicio solo necesita permiso de lectura sobre la Google Sheet para ambos scripts.
+
+---
+
 # 8. Columnas del CSV generado
 
 El archivo CSV incluye, como mínimo, estas columnas:
@@ -569,7 +620,7 @@ El archivo CSV incluye, como mínimo, estas columnas:
 | `FilaGoogleSheet` | Número de fila del registro encontrado en Google Sheets. |
 | `FechaOriginalGoogleSheet` | Fecha vigente tomada de `FECHA`; si la fila no tiene fecha, usa la última fecha anterior de la hoja. |
 | `NombreEncontradoGoogleSheet` | Nombre original encontrado en la hoja. |
-| `TieneMinutosInf` | `Sí` si la columna `MINUTOS INF` tiene un valor. |
+| `TieneMinutosInf` | `Sí` si `MINUTOS INF` contiene un entero mayor que cero. |
 | `ValorMinutosInf` | Valor original de `MINUTOS INF`. |
 
 Ejemplo conceptual:

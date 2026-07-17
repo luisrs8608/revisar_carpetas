@@ -10,6 +10,8 @@ import gspread
 from google.oauth2.service_account import Credentials
 from rapidfuzz import fuzz, process
 
+from minutos import es_minutos_inf_valido
+
 
 # ============================================================
 # CONFIGURACIÓN
@@ -277,7 +279,13 @@ def obtener_datos_google_sheet() -> list[dict]:
 
         fecha_fila = fila[indice_fecha].strip()
         nombre_original = fila[indice_nombre].strip()
-        minutos_inf = fila[indice_minutos_inf].strip()
+        valor_minutos_inf = fila[indice_minutos_inf]
+        minutos_inf = (
+            str(valor_minutos_inf).strip()
+            if valor_minutos_inf is not None
+            else ""
+        )
+        minutos_inf_valido = es_minutos_inf_valido(minutos_inf)
 
         if fecha_fila:
             fecha_actual = fecha_fila
@@ -295,7 +303,8 @@ def obtener_datos_google_sheet() -> list[dict]:
                 nombre_original
             ),
             "MinutosInf": minutos_inf,
-            "TieneMinutosInf": "Sí" if minutos_inf else "No",
+            "MinutosInfValido": minutos_inf_valido,
+            "TieneMinutosInf": "Sí" if minutos_inf_valido else "No",
         })
 
     return registros
@@ -491,7 +500,7 @@ def obtener_resultados(
             })
 
     for registro_sheet in registros_sheet:
-        if registro_sheet["MinutosInf"]:
+        if registro_sheet["MinutosInfValido"]:
             continue
 
         if registro_sheet["FilaGoogleSheet"] in filas_sheet_incluidas:
