@@ -1,4 +1,3 @@
-import csv
 import json
 import re
 import sys
@@ -11,6 +10,7 @@ from google.oauth2.service_account import Credentials
 from rapidfuzz import fuzz, process
 
 from minutos import es_minutos_inf_valido
+from salida_excel import asegurar_extension_xlsx, exportar_excel
 
 
 # ============================================================
@@ -85,9 +85,11 @@ def cargar_configuracion() -> Configuracion:
     archivo_salida = Path(
         str(datos.get(
             "archivo_salida",
-            "resultado_comparacion_carpetas.csv"
+            "resultado_comparacion_carpetas.xlsx"
         ))
     ).expanduser()
+
+    archivo_salida = asegurar_extension_xlsx(archivo_salida)
 
     if not archivo_salida.is_absolute():
         archivo_salida = directorio_principal / archivo_salida
@@ -536,44 +538,6 @@ def obtener_resultados(
 # EXPORTACIÓN
 # ============================================================
 
-def exportar_csv(datos: list[dict]) -> None:
-    """
-    Genera CSV UTF-8 con BOM para abrir correctamente con Excel.
-    """
-
-    campos = [
-        "Sede",
-        "NombreOriginalCarpeta",
-        "NombreNormalizadoCarpeta",
-        "NombreOrdenadoCarpeta",
-        "RutaCompleta",
-        "EstaVacia",
-        "CantidadItems",
-        "CantidadArchivos",
-        "CantidadSubcarpetas",
-        "EstadoComparacion",
-        "PorcentajeSimilitud",
-        "FilaGoogleSheet",
-        "FechaOriginalGoogleSheet",
-        "NombreEncontradoGoogleSheet",
-        "TieneMinutosInf",
-        "ValorMinutosInf",
-    ]
-
-    with ARCHIVO_SALIDA.open(
-        mode="w",
-        newline="",
-        encoding="utf-8-sig"
-    ) as archivo_csv:
-
-        writer = csv.DictWriter(
-            archivo_csv,
-            fieldnames=campos
-        )
-
-        writer.writeheader()
-        writer.writerows(datos)
-
 
 def main():
     if not DIRECTORIO_PRINCIPAL.exists():
@@ -597,7 +561,7 @@ def main():
     print("Analizando sedes y carpetas de personas...")
     datos = obtener_resultados(registros_sheet)
 
-    exportar_csv(datos)
+    exportar_excel(datos, ARCHIVO_SALIDA)
 
     coincidencias_exactas = sum(
         1
@@ -645,7 +609,7 @@ def main():
         "Registros de Google Sheets sin carpeta coincidente: "
         f"{sin_carpeta_coincidente}"
     )
-    print(f"\nCSV generado en:\n{ARCHIVO_SALIDA}")
+    print(f"\nExcel generado en:\n{ARCHIVO_SALIDA}")
 
 
 if __name__ == "__main__":

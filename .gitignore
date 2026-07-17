@@ -9,3 +9,6 @@ venv/
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Resultado generado por defecto
+resultado_comparacion_carpetas.xlsx

@@ -1,6 +1,6 @@
 # Comparador de Carpetas y Google Sheets
 
-Este proyecto analiza una estructura de carpetas organizada por **sedes**, compara los nombres de las carpetas de personas contra una Google Sheet y genera un archivo CSV con el resultado.
+Este proyecto analiza una estructura de carpetas organizada por **sedes**, compara los nombres de las carpetas de personas contra una Google Sheet y genera un libro Excel con varias vistas del resultado.
 
 El objetivo es detectar si cada persona encontrada en las carpetas aparece en la hoja de cálculo, aun cuando el nombre tenga diferencias de formato, como espacios, guiones, guiones bajos, tildes o el orden de nombre y apellido.
 
@@ -19,7 +19,7 @@ El script realiza estas tareas:
 7. Lee la columna `FECHA`.
 8. Lee la columna `MINUTOS INF` e indica si contiene un entero mayor que cero.
 9. Calcula un porcentaje de similitud entre los nombres.
-10. Genera un CSV final dentro del directorio principal.
+10. Genera un archivo Excel con la salida completa y tres hojas filtradas.
 
 ---
 
@@ -63,6 +63,7 @@ comparador_carpetas_google_sheet/
 ├── revisar_carpetas.py
 ├── borrar_carpetas_con_minutos.py
 ├── minutos.py
+├── salida_excel.py
 ├── probar_google_sheet.py
 ├── config.example.json
 ├── config.json
@@ -129,7 +130,7 @@ Actualiza `pip` e instala las dependencias:
 
 ```bash
 python -m pip install --upgrade pip
-pip install gspread google-auth rapidfuzz Send2Trash
+pip install gspread google-auth rapidfuzz Send2Trash openpyxl
 ```
 
 Guarda las dependencias del proyecto:
@@ -427,7 +428,7 @@ Luego abre `config.json` y completa los valores:
   "nombre_hoja": "Hoja 1",
   "fila_encabezados": 11,
   "fila_inicial_datos": 12,
-  "archivo_salida": "resultado_comparacion_carpetas.csv",
+  "archivo_salida": "resultado_comparacion_carpetas.xlsx",
   "umbral_coincidencia_probable": 90,
   "umbral_revision_manual": 75
 }
@@ -455,7 +456,9 @@ Cuando se ejecute en Windows, cambia la ruta por la ubicación real:
 
 En JSON, las barras invertidas de Windows deben escribirse dobles: `\\`.
 
-Si `archivo_credenciales` es una ruta relativa, se interpreta desde la carpeta del proyecto. Si `archivo_salida` es solo un nombre de archivo, el CSV se crea dentro de `directorio_principal`.
+Si `archivo_credenciales` es una ruta relativa, se interpreta desde la carpeta del proyecto. Si `archivo_salida` es solo un nombre de archivo, el Excel se crea dentro de `directorio_principal`.
+
+Las configuraciones existentes que todavía terminen en `.csv` se convierten automáticamente a `.xlsx` al ejecutar el script.
 
 ---
 
@@ -546,7 +549,7 @@ python .\revisar_carpetas.py
 El archivo final se crea según el valor `archivo_salida` de `config.json`. Si es solo un nombre de archivo, se guarda dentro de `directorio_principal`:
 
 ```text
-resultado_comparacion_carpetas.csv
+resultado_comparacion_carpetas.xlsx
 ```
 
 ---
@@ -600,9 +603,18 @@ La cuenta de servicio solo necesita permiso de lectura sobre la Google Sheet par
 
 ---
 
-# 8. Columnas del CSV generado
+# 8. Hojas y columnas del Excel generado
 
-El archivo CSV incluye, como mínimo, estas columnas:
+El libro contiene estas hojas:
+
+| Hoja | Contenido |
+|---|---|
+| `Salida actual` | Todos los resultados que anteriormente se incluían en el CSV. |
+| `Con minutos` | Solo los resultados cuyo `MINUTOS INF` es un entero mayor que cero. |
+| `Carpetas no encontradas` | Carpetas locales con estado `No encontrado` o `Sin datos en Google Sheet`. Las coincidencias para revisar permanecen únicamente en la salida general. |
+| `Sin minutos ni carpeta` | Filas de Google Sheets sin minutos válidos para las cuales no se encontró una carpeta coincidente. |
+
+Las tres hojas conservan las mismas columnas:
 
 | Columna | Descripción |
 |---|---|
@@ -623,15 +635,7 @@ El archivo CSV incluye, como mínimo, estas columnas:
 | `TieneMinutosInf` | `Sí` si `MINUTOS INF` contiene un entero mayor que cero. |
 | `ValorMinutosInf` | Valor original de `MINUTOS INF`. |
 
-Ejemplo conceptual:
-
-```csv
-Sede,NombreOriginalCarpeta,EstaVacia,EstadoComparacion,PorcentajeSimilitud,FechaOriginalGoogleSheet,NombreEncontradoGoogleSheet,TieneMinutosInf,ValorMinutosInf
-TOMOGRAFIAS COLONIA,Sofia_Araujo,No,Coincidencia exacta,100,1/6,Sofia Araujo,Sí,50
-TOMOGRAFIAS DURAZNO,Perez_Juan,Sí,Coincidencia exacta,100,2/6,Juan Perez,No,
-TOMOGRAFIAS NUEVO CENTRO,Persona No Registrada,No,No encontrado,42.5,,,,
-,,,Sin carpeta coincidente,,3/6,Nombre Pendiente,No,
-```
+Cada hoja incluye encabezados destacados, filtros, la primera fila congelada, anchos de columna ajustados y colores para facilitar la revisión de los estados.
 
 ---
 
@@ -701,7 +705,7 @@ __pycache__/
 service_account.json
 
 # Resultados generados
-resultado_comparacion_carpetas.csv
+resultado_comparacion_carpetas.xlsx
 ```
 
 Nunca subas el archivo `service_account.json` a un repositorio.
@@ -789,7 +793,7 @@ En Windows, asegúrate de ejecutar el script con un usuario que pueda acceder a 
 - Otorga permiso de **Lector** a la cuenta de servicio mientras el script solo consulte datos.
 - Protege `service_account.json`.
 - Evita comparar o consolidar resultados automáticamente cuando la coincidencia sea “probable” o “para revisar”.
-- Conserva el CSV como reporte de auditoría para validar resultados.
+- Conserva el Excel como reporte de auditoría para validar resultados.
 - Si en el futuro existe un identificador único en carpetas o Google Sheets, como cédula, número de historia clínica o ID de paciente, úsalo como clave principal. El nombre debe quedar como dato complementario.
 
 ---
@@ -812,7 +816,7 @@ cd C:\ruta\del\proyecto
 python .\revisar_carpetas.py
 ```
 
-Al finalizar, abre `resultado_comparacion_carpetas.csv` con Excel y filtra especialmente por:
+Al finalizar, abre `resultado_comparacion_carpetas.xlsx`. La hoja `Salida actual` permite filtrar especialmente por:
 
 - `EstadoComparacion`
 - `PorcentajeSimilitud`
