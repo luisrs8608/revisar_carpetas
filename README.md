@@ -130,7 +130,7 @@ Actualiza `pip` e instala las dependencias:
 
 ```bash
 python -m pip install --upgrade pip
-pip install gspread google-auth rapidfuzz Send2Trash openpyxl
+pip install gspread google-auth rapidfuzz openpyxl
 ```
 
 Guarda las dependencias del proyecto:
@@ -597,7 +597,7 @@ Para continuar debes escribir exactamente:
 BORRAR
 ```
 
-Las carpetas confirmadas, junto con todo su contenido, se mueven a la Papelera del sistema mediante `Send2Trash`; no se borran filas de Google Sheets. Mientras no vacíes la Papelera, podrás recuperar una carpeta movida por error.
+Las carpetas confirmadas, junto con todo su contenido, se borran definitivamente sin pasar por la Papelera del sistema; no se borran filas de Google Sheets. Esta acción es irreversible, por lo que conviene revisar cuidadosamente la vista previa antes de escribir `BORRAR`.
 
 La cuenta de servicio solo necesita permiso de lectura sobre la Google Sheet para ambos scripts.
 

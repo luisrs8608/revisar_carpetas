@@ -1,3 +1,4 @@
+import shutil
 import sys
 from collections import defaultdict
 from dataclasses import dataclass
@@ -161,7 +162,7 @@ def seleccionar_carpetas(
 
 
 def mostrar_vista_previa(resultado: ResultadoSeleccion) -> None:
-    print("\nCarpetas que se moverán a la Papelera:")
+    print("\nCarpetas que se borrarán definitivamente:")
 
     if not resultado.elegibles:
         print("  Ninguna.")
@@ -196,7 +197,7 @@ def mostrar_vista_previa(resultado: ResultadoSeleccion) -> None:
 
     print(
         "\nResumen: "
-        f"{len(resultado.elegibles)} para Papelera, "
+        f"{len(resultado.elegibles)} para borrar definitivamente, "
         f"{len(resultado.ambiguas)} relaciones ambiguas, "
         f"{len(resultado.filas_sin_carpeta)} sin carpeta."
     )
@@ -211,8 +212,8 @@ def confirmar_borrado(
 
     try:
         respuesta = leer(
-            f"\nPara mover {cantidad} carpeta(s) a la Papelera, "
-            "escribe BORRAR: "
+            f"\nEsta acción es irreversible. Para borrar definitivamente "
+            f"{cantidad} carpeta(s) y todo su contenido, escribe BORRAR: "
         )
     except (EOFError, KeyboardInterrupt):
         print("\nOperación cancelada.")
@@ -236,24 +237,17 @@ def ruta_es_segura(ruta: Path, directorio_principal: Path) -> bool:
     return len(relativa.parts) == 2
 
 
-def enviar_a_papelera(ruta: Path) -> None:
-    try:
-        from send2trash import send2trash
-    except ImportError as error:
-        raise RuntimeError(
-            "No está instalada la dependencia Send2Trash. "
-            "Ejecuta: pip install -r requirements.txt"
-        ) from error
-
-    send2trash(str(ruta))
+def borrar_carpeta_definitivamente(ruta: Path) -> None:
+    """Borra una carpeta y todo su contenido sin usar la Papelera."""
+    shutil.rmtree(ruta)
 
 
-def mover_carpetas_a_papelera(
+def borrar_carpetas_definitivamente(
     coincidencias: list[CoincidenciaCarpeta],
     directorio_principal: Path,
-    mover: Callable[[Path], None] = enviar_a_papelera,
+    borrar: Callable[[Path], None] = borrar_carpeta_definitivamente,
 ) -> tuple[int, int]:
-    movidas = 0
+    borradas = 0
     fallidas = 0
 
     for coincidencia in coincidencias:
@@ -265,14 +259,14 @@ def mover_carpetas_a_papelera(
             continue
 
         try:
-            mover(ruta)
-            print(f"Movida a la Papelera: {ruta}")
-            movidas += 1
+            borrar(ruta)
+            print(f"Borrada definitivamente: {ruta}")
+            borradas += 1
         except Exception as error:
-            print(f"No se pudo mover {ruta}: {error}", file=sys.stderr)
+            print(f"No se pudo borrar {ruta}: {error}", file=sys.stderr)
             fallidas += 1
 
-    return movidas, fallidas
+    return borradas, fallidas
 
 
 def main() -> None:
@@ -313,13 +307,13 @@ def main() -> None:
         print("\nConfirmación incorrecta. No se realizaron cambios.")
         return
 
-    movidas, fallidas = mover_carpetas_a_papelera(
+    borradas, fallidas = borrar_carpetas_definitivamente(
         resultado.elegibles,
         comparador.DIRECTORIO_PRINCIPAL,
     )
 
     print(
-        f"\nProceso terminado: {movidas} carpeta(s) movida(s) "
+        f"\nProceso terminado: {borradas} carpeta(s) borrada(s) "
         f"y {fallidas} omitida(s) o fallida(s)."
     )
 

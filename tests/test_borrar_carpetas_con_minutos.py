@@ -5,8 +5,8 @@ from pathlib import Path
 from borrar_carpetas_con_minutos import (
     CarpetaLocal,
     CoincidenciaCarpeta,
+    borrar_carpetas_definitivamente,
     confirmar_borrado,
-    mover_carpetas_a_papelera,
     ruta_es_segura,
     seleccionar_carpetas,
 )
@@ -108,7 +108,7 @@ class SeguridadBorradoTests(unittest.TestCase):
             self.assertFalse(ruta_es_segura(nivel_extra, raiz))
             self.assertFalse(ruta_es_segura(raiz / "inexistente", raiz))
 
-    def test_mueve_solo_rutas_seguras_mediante_la_funcion_recibida(self):
+    def test_borra_solo_rutas_seguras_mediante_la_funcion_recibida(self):
         with tempfile.TemporaryDirectory() as temporal:
             raiz = Path(temporal)
             persona = raiz / "sede" / "persona"
@@ -124,14 +124,38 @@ class SeguridadBorradoTests(unittest.TestCase):
             )
             rutas_recibidas = []
 
-            movidas, fallidas = mover_carpetas_a_papelera(
+            borradas, fallidas = borrar_carpetas_definitivamente(
                 [coincidencia],
                 raiz,
                 rutas_recibidas.append,
             )
 
-            self.assertEqual((movidas, fallidas), (1, 0))
+            self.assertEqual((borradas, fallidas), (1, 0))
             self.assertEqual(rutas_recibidas, [persona])
+
+    def test_borra_definitivamente_la_carpeta_y_su_contenido(self):
+        with tempfile.TemporaryDirectory() as temporal:
+            raiz = Path(temporal)
+            persona = raiz / "sede" / "persona"
+            persona.mkdir(parents=True)
+            (persona / "archivo.txt").write_text("contenido")
+            carpeta = crear_carpeta(persona, "persona")
+            coincidencia = CoincidenciaCarpeta(
+                fila_google_sheet=12,
+                nombre_google_sheet="persona",
+                minutos_inf="20",
+                carpeta=carpeta,
+                similitud=100,
+                estado="Coincidencia exacta",
+            )
+
+            resultado = borrar_carpetas_definitivamente(
+                [coincidencia],
+                raiz,
+            )
+
+            self.assertEqual(resultado, (1, 0))
+            self.assertFalse(persona.exists())
 
 
 if __name__ == "__main__":
